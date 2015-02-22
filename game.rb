@@ -6,7 +6,9 @@ GRAVITY = Vec[0, 600] # pixels/s^2
 JUMP_VEL = Vec[0, -300] # pixel/s
 OBSTACLE_SPEED = 200 # pixel/s
 OBSTACLE_SPAWN_INTERVAL = 1.3 #seconds
-OBSTACLE_GAP = 100 #pixels
+OBSTACLE_GAP = 140 #pixels
+DEATH_VELOCITY = Vec[50, -500] # pixels/s
+DEATH_ROTATIONAL_VEL = 360 # degrees/s
 
 Rect = DefStruct.new{{
   pos: Vec[0,0],
@@ -19,10 +21,12 @@ Rect = DefStruct.new{{
 end
 
 GameState = DefStruct.new{{
+  started: false,
   alive: true,
   scroll_x: 0,
-  player_pos: Vec[20,0],
+  player_pos: Vec[20,250],
   player_vel: Vec[0,0],
+  player_rotation: 0,
   obstacles: [], # array of Vec
   obstacle_countdown: OBSTACLE_SPAWN_INTERVAL,
 }}
@@ -42,12 +46,10 @@ class GameWindow < Gosu::Window
   def button_down(button)
     case button
     when Gosu::KbEscape then close
-    when Gosu::KbSpace then @state.player_vel.set!(JUMP_VEL)
+    when Gosu::KbSpace
+      @state.player_vel.set!(JUMP_VEL) if @state.alive
+      @state.started = true
     end
-  end
-
-  def spawn_obstacle
-    @state.obstacles << Vec[width, rand(50..320)]
   end
 
   def update
@@ -58,12 +60,14 @@ class GameWindow < Gosu::Window
       @state.scroll_x = 0
     end
 
+    return unless @state.started
+
     @state.player_vel += dt*GRAVITY
     @state.player_pos += dt*@state.player_vel
 
     @state.obstacle_countdown -= dt
     if @state.obstacle_countdown <= 0
-      spawn_obstacle
+      @state.obstacles << Vec[width, rand(50..320)]
       @state.obstacle_countdown += OBSTACLE_SPAWN_INTERVAL
     end
 
@@ -71,8 +75,13 @@ class GameWindow < Gosu::Window
       obst.x -= dt*OBSTACLE_SPEED
     end
 
-    if player_is_colliding?
+    if @state.alive && player_is_colliding?
       @state.alive = false
+      @state.player_vel.set!(DEATH_VELOCITY)
+    end
+
+    unless @state.alive
+      @state.player_rotation += dt*DEATH_ROTATIONAL_VEL
     end
   end
 
@@ -106,9 +115,12 @@ class GameWindow < Gosu::Window
       end
     end
 
-    @images[:player].draw(@state.player_pos.x, @state.player_pos.y, 0)
+    @images[:player].draw_rot(
+      @state.player_pos.x, @state.player_pos.y,
+      0, @state.player_rotation,
+      0, 0)
 
-    debug_draw
+    #debug_draw
   end
 
   def player_rect
