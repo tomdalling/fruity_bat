@@ -1,5 +1,5 @@
 require 'gosu'
-require 'defstruct'
+require_relative 'defstruct'
 require_relative 'vector'
 require_relative 'timer'
 require_relative 'animation'
