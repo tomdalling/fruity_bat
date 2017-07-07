@@ -28,3 +28,11 @@ Finally, you can run the code:
 bundle exec ruby game.rb
 ```
 
+Installing DefStruct
+--------------------
+
+It is no longer necessary to install the `defstruct` gem, because
+I've copied it into this git repo directly.
+
+If you are following the video, ignore the part where I add `gem 'defstruct'` to the `Gemfile`.
+Instead, you can take the `defstruct.rb` file out of this repo, and use `require_relative 'defstruct'` to load it (see the top of `game.rb`).
